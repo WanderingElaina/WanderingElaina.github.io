@@ -255,5 +255,106 @@ private Long id;
 
 ---
 
+这个 `queryWrapper.orderBy(...)` 是 MyBatis-Plus 中用于**动态排序**的写法。
+我给你**逐个参数解释清楚**：
+
+---
+
+### 🟢 方法签名
+
+先看下 `orderBy` 方法的原型：
+
+```java
+public QueryWrapper<T> orderBy(boolean condition, boolean isAsc, String... columns)
+```
+
+参数解释：
+
+1. `condition`: 是否执行排序（`true` 表示一定排序，`false` 表示忽略排序）
+2. `isAsc`: 排序方向（`true` 升序，`false` 降序）
+3. `columns`: 要排序的列
+
+---
+
+### 🟢 你这段代码
+
+```java
+queryWrapper.orderBy(
+    true,
+    pageDTO.getIsAsc().equals("asc"),
+    ToolsUtils.camelToUnderline(pageDTO.getOrderByColumn())
+);
+```
+
+逐个拆解：
+✅ **第一个参数** `true`
+
+* 永远执行排序。
+
+✅ **第二个参数** `pageDTO.getIsAsc().equals("asc")`
+
+* `pageDTO.getIsAsc()` 应该是个字符串 `"asc"` 或 `"desc"`。
+* 判断是否是 `"asc"`，是则返回 `true`（升序），否则 `false`（降序）。
+
+✅ **第三个参数** `ToolsUtils.camelToUnderline(pageDTO.getOrderByColumn())`
+
+* `pageDTO.getOrderByColumn()` 拿到你想排序的字段名（一般是Java驼峰命名）。
+* `camelToUnderline()` 把 `userName` 转成 `user_name`（数据库字段）。
+
+  > 比如：`createTime` -> `create_time`
+
+---
+
+### 🟢 举个例子
+
+假设：
+
+```java
+pageDTO.getIsAsc() = "asc"
+pageDTO.getOrderByColumn() = "createTime"
+```
+
+则执行：
+
+```java
+orderBy(
+    true,
+    true,           // 升序
+    "create_time"   // 数据库字段
+)
+```
+
+相当于 SQL:
+
+```sql
+ORDER BY create_time ASC
+```
+
+如果：
+
+```java
+pageDTO.getIsAsc() = "desc"
+pageDTO.getOrderByColumn() = "userName"
+```
+
+则：
+
+```sql
+ORDER BY user_name DESC
+```
+
+---
+
+### 🟢 总结作用
+
+**动态排序封装**：
+
+* 根据前端传参（排序列 + 排序方向）灵活拼接 `ORDER BY`。
+* 不用写很多 if-else 手动判断。
+
+---
+
+
+
 
 
