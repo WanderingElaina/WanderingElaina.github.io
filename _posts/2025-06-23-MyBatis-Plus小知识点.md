@@ -276,7 +276,7 @@ public QueryWrapper<T> orderBy(boolean condition, boolean isAsc, String... colum
 
 ---
 
-### 🟢 你这段代码
+### 🟢 这段代码
 
 ```java
 queryWrapper.orderBy(
@@ -354,6 +354,319 @@ ORDER BY user_name DESC
 
 ---
 
+
+非常好兄弟，这行代码其实是 **MyBatis-Plus** 里非常常用的条件构造器用法，我来**逐句拆开给你讲清楚：**
+
+---
+
+## 🟢 先看完整写法
+
+```java
+wrapperStock.in(GoodsStockDetail::getGoodsId, goods.getId());
+```
+
+这里用到了：
+✅ `QueryWrapper` 或 `LambdaQueryWrapper`
+✅ `in()` 方法
+
+---
+
+## 🟢 逐个分析
+
+### 🟢 1. `wrapperStock`
+
+这个就是你的条件构造器：
+
+```java
+LambdaQueryWrapper<GoodsStockDetail> wrapperStock = new LambdaQueryWrapper<>();
+```
+
+它用来动态拼SQL。
+
+---
+
+### 🟢 2. `in()` 方法
+
+```java
+wrapperStock.in(column, value);
+```
+
+翻译成SQL：
+
+```sql
+WHERE column IN (value1, value2, ...)
+```
+
+✅ 也就是说：**只要某一行的 `column` 值在这个列表里，就会被查出来**。
+
+---
+
+### 🟢 3. `GoodsStockDetail::getGoodsId`
+
+这个是**Lambda列选择器**，表示：
+
+> **`goods_id`字段**
+
+它等价于：
+
+```java
+"in('goods_id', ...)"
+```
+
+✅ 它的好处：
+
+* 不用写字符串，编译安全
+* 如果表字段改了，不会写错
+
+---
+
+### 🟢 4. `goods.getId()`
+
+这个是你传进去的值：
+
+* `goods`是你循环时的对象
+* `goods.getId()`返回一个Long
+
+---
+
+✅ **但是这里有一个细节：**
+
+> `in()`方法期望的是一个集合（List/Set/数组），如果你直接传一个单个值，它就等价于：
+
+```sql
+WHERE goods_id IN (单个值)
+```
+
+也就是：
+
+```sql
+WHERE goods_id = xxx
+```
+
+这个完全合法。
+
+---
+
+## 🟢 实际等效SQL
+
+假如 `goods.getId() == 5`：
+
+```sql
+WHERE goods_id IN (5)
+```
+
+就是：
+
+```sql
+WHERE goods_id = 5
+```
+
+---
+
+## 🟢 举个更常用的例子
+
+如果你想查多个ID：
+
+```java
+List<Long> idList = Arrays.asList(1L, 2L, 3L);
+wrapperStock.in(GoodsStockDetail::getGoodsId, idList);
+```
+
+SQL:
+
+```sql
+WHERE goods_id IN (1,2,3)
+```
+
+---
+
+✅ 如果你只要查一个ID，也可以直接：
+
+```java
+wrapperStock.eq(GoodsStockDetail::getGoodsId, goods.getId());
+```
+
+**和 `in()` + 单个值效果完全一样**。
+
+---
+
+## 🟢 小总结
+
+这行：
+
+```java
+wrapperStock.in(GoodsStockDetail::getGoodsId, goods.getId());
+```
+
+意思是：
+✅ 查 `goods_id`等于 `goods.getId()` 的记录。
+
+如果 `getId()` 是单个值：
+👉 相当于 `eq()`。
+
+如果是集合：
+👉 就是`IN`条件。
+
+---
+
+**所以：**
+如果只查一个ID，更推荐：
+
+```java
+wrapperStock.eq(GoodsStockDetail::getGoodsId, goods.getId());
+```
+
+✅ 语义更清晰。
+
+---
+
+
+其实就是**把你查到的库存明细放到当前商品对象里**，我来一步一步详细拆开讲：
+
+---
+
+先看完整代码：
+
+```java
+goods.setStockDetails(
+    goodsStockDetailMapper.selectList(wrapperStock)
+);
+```
+
+✅ 逐步解释：
+
+---
+
+## 🟢 第一步：`goodsStockDetailMapper.selectList(wrapperStock)`
+
+这是**MyBatis-Plus Mapper的查询方法**：
+
+```java
+selectList(QueryWrapper)
+```
+
+它做的事情是：
+
+> **根据wrapper条件去数据库查询所有匹配的行，返回一个List。**
+
+举个例子：
+
+假设你 wrapper 条件：
+
+```java
+wrapperStock.eq("goods_id", 5)
+```
+
+对应SQL:
+
+```sql
+SELECT * FROM tb_goods_stock_detail WHERE goods_id = 5
+```
+
+返回结果：
+
+```java
+List<GoodsStockDetail> detailList
+```
+
+里面放的就是所有库存明细。
+
+---
+
+---
+
+## 🟢 第二步：把查询结果放到商品里
+
+```java
+goods.setStockDetails(...)
+```
+
+`goods` 是你的 `SysGoods` 对象，
+它有一个属性：
+
+```java
+private List<GoodsStockDetail> stockDetails;
+```
+
+这个 `setStockDetails()` 就是把刚才查到的库存明细list**赋值到这个属性**。
+
+---
+
+---
+
+✅ 所以这句话：
+
+```java
+goods.setStockDetails(goodsStockDetailMapper.selectList(wrapperStock));
+```
+
+意思就是：
+
+> “把当前商品 `goods` 所有库存明细查出来，放到它自己的 `stockDetails` 列表里。”
+
+---
+
+---
+
+## 🟢 举个通俗的例子
+
+假如数据库里：
+
+| id | goods\_id | 库存数量 |
+| -- | --------- | ---- |
+| 1  | 5         | 10   |
+| 2  | 5         | 20   |
+
+执行：
+
+```java
+goodsStockDetailMapper.selectList(wrapperStock);
+```
+
+返回：
+
+```java
+[
+  GoodsStockDetail(id=1, goods_id=5, 库存数量=10),
+  GoodsStockDetail(id=2, goods_id=5, 库存数量=20)
+]
+```
+
+然后：
+
+```java
+goods.setStockDetails(这个List);
+```
+
+**此时 `goods`对象就带有自己的库存明细了。**
+
+---
+
+✅ 前端在获取这个 `SysGoods`时，就能看到：
+
+```json
+{
+  "id":5,
+  "name":"xxx",
+  "stockDetails":[
+    { "id":1, "goodsId":5, "数量":10 },
+    { "id":2, "goodsId":5, "数量":20 }
+  ]
+}
+```
+
+---
+
+## 🟢 小总结
+
+**这句代码做的事：**
+
+> “把这个商品的所有库存明细一次性查出来，塞到商品里。”
+
+**作用：**
+✅ 前端可以直接拿到商品+它的库存列表。
+
+---
 
 
 
