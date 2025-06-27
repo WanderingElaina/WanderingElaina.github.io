@@ -375,7 +375,7 @@ wrapperStock.in(GoodsStockDetail::getGoodsId, goods.getId());
 
 ### 🟢 1. `wrapperStock`
 
-这个就是你的条件构造器：
+这个就是条件构造器：
 
 ```java
 LambdaQueryWrapper<GoodsStockDetail> wrapperStock = new LambdaQueryWrapper<>();
