@@ -8,6 +8,13 @@ excerpt_separator: "#"
 ---
 ---
 
+
+
+
+
+
+
+
 **写了 @TableId(type = IdType.AUTO) 并且数据库设置了 AUTO_INCREMENT，才可以忽略前端传的 id**
 
 
