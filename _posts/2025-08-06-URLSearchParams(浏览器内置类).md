@@ -101,4 +101,3 @@ const params = new URLSearchParams({
 
 ---
 
-如果你还不清楚 `URLSearchParams` 是怎么拼接 URL 的，我可以给你演示更多例子，是否需要？
