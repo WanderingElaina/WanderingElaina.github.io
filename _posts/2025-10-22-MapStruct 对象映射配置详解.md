@@ -270,3 +270,15 @@ private Integer pregnancyCount;
 4. **帮助生成准确的测试数据**
 
 在你的例子中，`example = "2"` 明确告诉前端开发者：这个字段应该传递整数值 2，而不是字符串 "2" 或其他格式，大大提升了接口的易用性。
+
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>1.5.5.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <version>1.5.5.Final</version>
+            <scope>provided</scope>
+        </dependency>
